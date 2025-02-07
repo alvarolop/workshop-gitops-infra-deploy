@@ -22,7 +22,7 @@ if [ $ADMIN == false ]; then
   echo "Creating users for cluster hub..."
   htpasswd -c -b -B ./oauth/oauth-$CLUSTER_NAME/htpasswd admin redhat
   for i in $(seq 1 $USERS);do
-     htpasswd -b -B ./oauth/oauth-$CLUSTER_NAME/htpasswd user-$i redhat
+    htpasswd -b -B ./oauth/oauth-$CLUSTER_NAME/htpasswd user-$i redhat
   done
 
 else

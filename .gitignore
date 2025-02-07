@@ -4,4 +4,5 @@ pullsecret.txt
 backup/
 install/
 oauth/
-.keys
+.ssh-keys
+aws-ocp4-config

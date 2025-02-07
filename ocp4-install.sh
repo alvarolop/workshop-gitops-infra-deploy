@@ -6,23 +6,26 @@ set -x
 DIR=$(pwd)
 INSTALL="0"
 CLUSTER_NAME=${1}
-REGION=${2}
+export AWS_DEFAULT_REGION=${2}
 BASE_DOMAIN=${3}
 REPLICAS_CP=${4}
 REPLICAS_WORKER=${5}
 VPC=${6}
-AWS_ID=${7}
-AWS_SECRET_KEY=${8}
+export AWS_ACCESS_KEY_ID=${7}
+export AWS_SECRET_ACCESS_KEY=${8}
 INSTANCE_TYPE=${9}
 USERS=${10}
 
 
+# Set "stable" if you want to install the latest stable version
+OPENSHIFT_VERSION="4.17.15"
+
 ## Prerequisites
-echo "This script install the latest stable version available for OCP..."
+echo "This script install ${OPENSHIFT_VERSION} version for OCP..."
 echo "Downloading OCP 4 installer if not exists:"
 
   if [ ! -f ./ocp4-installer.tar.gz ]; then
-      wget -O ./ocp4-installer.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-install-linux.tar.gz && tar xvzf ./ocp4-installer.tar.gz
+      curl -o ./ocp4-installer.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OPENSHIFT_VERSION}/openshift-install-linux-${OPENSHIFT_VERSION}.tar.gz && tar xvzf ./ocp4-installer.tar.gz
   else
       echo "Installer exists, using ./ocp4-installer.tar.gz. Unpacking..." ; echo " "
       tar xvzf ./ocp4-installer.tar.gz
@@ -30,14 +33,6 @@ echo "Downloading OCP 4 installer if not exists:"
 
 
 if [ ! -f ./install/install-dir-$CLUSTER_NAME/terraform.cluster.tfstate ]; then
-    echo "AWS credentials: "; echo " "
-    aws configure set region $REGION 
-
-cat << EOF > ~/.aws/credentials
-[default]
-aws_access_key_id = $AWS_ID
-aws_secret_access_key = $AWS_SECRET_KEY
-EOF
 
     cleanup() {
         rm -f ./openshift-install
@@ -113,7 +108,7 @@ networking:
   - 172.30.0.0/16
 platform:
   aws:
-    region: $REGION
+    region: $AWS_DEFAULT_REGION
     $EXISTING_VPC
 pullSecret: '$PULL_SECRET'
 sshKey: $SSH_KEY
@@ -146,4 +141,3 @@ else
 fi
 
 exit
-
