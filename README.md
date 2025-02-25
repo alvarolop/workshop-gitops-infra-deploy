@@ -138,6 +138,8 @@ At this point, you should have the hub cluster and also one managed cluster for 
 > sh postinstall.sh aws-ocp4-config
 > ```
 
+
+
 ### 1. Deploy and configure ArgoCD declaratively
 
 If you didn't run the previous command that automates everything, follow these steps:
