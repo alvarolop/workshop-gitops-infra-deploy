@@ -11,13 +11,12 @@
       1. [Deploying the Hub cluster](#deploying-the-hub-cluster)
       2. [Deploying Managed Clusters (SNO)](#deploying-managed-clusters-sno)
    3. [Postinstall configuration](#postinstall-configuration)
-      1. [Deploy and configure ArgoCD](#deploy-and-configure-argocd)
-      2. [Declarative setup](#declarative-setup)
-   4. [Deploy keycloak](#deploy-keycloak)
-   5. [Deploy FreeIPA](#deploy-freeipa)
+      1. [1. Deploy and configure ArgoCD declaratively](#1-deploy-and-configure-argocd-declaratively)
+      2. [2. Deploy keycloak](#2-deploy-keycloak)
+   4. [Deploy FreeIPA](#deploy-freeipa)
       1. [Create FreeIPA users](#create-freeipa-users)
-   6. [Deploy vault server](#deploy-vault-server)
-   7. [Destroy cluster](#destroy-cluster)
+   5. [Deploy vault server](#deploy-vault-server)
+   6. [Destroy cluster](#destroy-cluster)
 
 
 > [!IMPORTANT]
@@ -43,7 +42,7 @@ This workshop deployment requires the following **cli** tools:
 
 * `oc`. [Installation guide](https://docs.openshift.com/container-platform/4.17/cli_reference/openshift_cli/getting-started-cli.html).
 * `aws`. [Installation guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-* `helm. [Installation guide](https://helm.sh/docs/intro/install/). 
+* `helm`. [Installation guide](https://helm.sh/docs/intro/install/). 
 <!-- * `argocd`. [Installation guide](https://argo-cd.readthedocs.io/en/stable/cli_installation/). -->
 <!-- * `yq`. [Installation guide](https://www.cyberithub.com/how-to-install-yq-command-line-tool-on-linux-in-5-easy-steps/). -->
 
@@ -133,61 +132,24 @@ At this point, you should have the hub cluster and also one managed cluster for 
 
 ## Postinstall configuration
 
-All this process has been automated so that you don't have to execute it manually. Please execute the following script:
+> [!WARNING]
+> All this process has been automated so that you don't have to execute it manually. Please execute the following script:
+> ```bash
+> sh postinstall.sh aws-ocp4-config
+> ```
 
-```bash
-sh postinstall.sh aws-ocp4-config
-```
+### 1. Deploy and configure ArgoCD declaratively
+
+If you didn't run the previous command that automates everything, follow these steps:
+
+1. Install the OpenShift GitOps operator: `oc apply -f gitops-operator`.
+2. Create a branch `setup-sno` from the repo [workshop-gitops-content-deploy](https://github.com/alvarolop/workshop-gitops-content-deploy.git).
+3. Adapt the ArgoCD application to your credentials and apply it `oc apply -f application-hub-setup.yaml`.
 
 
-### Deploy and configure ArgoCD
 
 
-
-:warning: It's higly recommended to fllow de Declarative setup approach as it has the last updates.
-
-This script installs GitOps operator, deploy ArgoCD instance and add managed clusters. You must specify the amount of deployed SNO clusters to be managed by argocd:
-
-```bash
-sh deploy-gitops.sh <amount_of_sno_clusters>
-```
-
-For example, if you want to add 3 sno cluster (sno-1, sno-2 and sno-3):
-
-```bash
-sh deploy-gitops.sh 3
-```
-
-This script configures argo RBAC so users created in hub cluster for sno managed cluster (user-1, user-2...) can only view project-sno-x and destination sno-x clusters hence only deploying to the allowed destination within the allowed project.
-
-### Declarative setup
-
-You can also deploy and configure GitOps using a declarative approach as defined in this [repo](https://github.com/romerobu/workshop-gitops-content-deploy.git).
-
-First install Openshift GitOps operator. Then create a setup-sno branch, add your clusters token to [hub-setup/charts/gitops-setup/values.yaml](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main/hub-setup/charts/gitops-setup/values.yaml) file, then set subdomain and sharding replicas values and then create global-config/bootstrap-a/hub-setup-a.yaml Application on your default instance.
-
-```bash
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: hub-setup
-  namespace: openshift-gitops
-spec:
-  destination:
-    namespace: openshift-gitops
-    server: https://kubernetes.default.svc
-  project: default
-  source:
-    repoURL: https://github.com/romerobu/workshop-gitops-content-deploy.git
-    targetRevision: setup-sno
-    path: hub-setup/charts/gitops-setup 
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-```
-
-## Deploy keycloak
+### 2. Deploy keycloak
 
 To deploy an instance of keycloak and create the corresponding realms, client and users, run this script:
 

@@ -1,0 +1,83 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hub-setup
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: openshift-gitops
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/alvarolop/workshop-gitops-content-deploy.git
+    targetRevision: setup-sno
+    path: hub-setup/charts/gitops-setup
+    helm:
+      values: |
+        domain: $CLUSTER_DOMAIN
+        sno:
+          1:
+            username: admin
+            password: redhat
+          2:
+            username: admin
+            password: redhat
+          3:
+            username: admin
+            password: redhat
+          4:
+            username: admin
+            password: redhat
+          5:
+            username: admin
+            password: redhat
+          6:
+            username: admin
+            password: redhat
+          7:
+            username: admin
+            password: redhat
+          8:
+            username: admin
+            password: redhat
+          9:
+            username: admin
+            password: redhat
+          10:
+            username: admin
+            password: redhat
+          11:
+            username: admin
+            password: redhat
+          12:
+            username: admin
+            password: redhat
+          13:
+            username: admin
+            password: redhat
+          14:
+            username: admin
+            password: redhat
+          15:
+            username: admin
+            password: redhat
+          16:
+            username: admin
+            password: redhat
+          17:
+            username: admin
+            password: redhat
+          18:
+            username: admin
+            password: redhat
+          19:
+            username: admin
+            password: redhat
+          20:
+            username: admin
+            password: redhat
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
