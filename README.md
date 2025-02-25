@@ -1,39 +1,148 @@
 
-# workshop-gitops-infra-deploy
+# GitOps Workshop - Deploy Infra
 
-This repo is part of the [ArgoCD Managing Infrastructure workshop](https://romerobu.github.io/manual-workshop-infra/manual-workshop-infra/index.html) and is intended to deploy clusters (hub and managed) for this purpose plus the infra setup required to complete the activities. 
+1. [GitOps Workshop - Deploy Infra](#gitops-workshop---deploy-infra)
+   1. [Prerequisites](#prerequisites)
+      1. [Install CLI tools](#install-cli-tools)
+      2. [AWS account](#aws-account)
+      3. [Pull secret](#pull-secret)
+      4. [Environment variables](#environment-variables)
+   2. [Creating OCP IPI on AWS](#creating-ocp-ipi-on-aws)
+      1. [Deploying the Hub cluster](#deploying-the-hub-cluster)
+      2. [Deploying Managed Clusters (SNO)](#deploying-managed-clusters-sno)
+   3. [Postinstall configuration](#postinstall-configuration)
+      1. [Deploy and configure ArgoCD](#deploy-and-configure-argocd)
+      2. [Declarative setup](#declarative-setup)
+   4. [Deploy keycloak](#deploy-keycloak)
+   5. [Deploy FreeIPA](#deploy-freeipa)
+      1. [Create FreeIPA users](#create-freeipa-users)
+   6. [Deploy vault server](#deploy-vault-server)
+   7. [Destroy cluster](#destroy-cluster)
 
-## Create cluster
 
-:warning: First of all, create a **./pullsecret.txt** containing the pull secret to be used.
+> [!IMPORTANT]
+> This repository builds upon the original workshop developed by Coral, as documented in her repository: https://github.com/romerobu/workshop-gitops-infra-deploy.
 
-This script deploy OCP both hub and SNO managed on AWS. You must specify the following params:
+This repo is part of the [ArgoCD Managing Infrastructure workshop](https://alvarolop.github.io/manual-workshop-infra/manual-workshop-infra/index.html) and is intended to deploy the clusters (hub and managed) plus the infra setup required to complete the activities.
+
+In order to deploy all the infra you will need to cover the following steps:
+
+1. Deploy the hub cluster named `argo-hub`. This will create a VPC on AWS.
+2. Deploy all the managed clusters named `sno-X` reusing the same VPC.
+3. Deploy ArgoCD to manage those clusters.
+4. Configure FreeIPA and Keycloak on the hub to provide credentials.
+5. Configure Hashicorp Vault on the hub to store secrets.
+6. [Optional] Configure the cluster certificates and LightSpeed operator.
+
+
+## Prerequisites
+
+### Install CLI tools
+
+This workshop deployment requires the following **cli** tools:
+
+* `oc`. [Installation guide](https://docs.openshift.com/container-platform/4.17/cli_reference/openshift_cli/getting-started-cli.html).
+* `aws`. [Installation guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+* `helm. [Installation guide](https://helm.sh/docs/intro/install/). 
+<!-- * `argocd`. [Installation guide](https://argo-cd.readthedocs.io/en/stable/cli_installation/). -->
+<!-- * `yq`. [Installation guide](https://www.cyberithub.com/how-to-install-yq-command-line-tool-on-linux-in-5-easy-steps/). -->
+
+
+### AWS account
+
+In order to install OpenShift on AWS using IPI (Installer-Provisioned Infrastructure), you need the following configuration:
+
+* An AWS account.
+* A domain name registered with a registrar. You can register a domain directly through Route 53 or use another domain registrar.
+* To configure the top-level domain in AWS Route 53, create a hosted zone for your domain, update the registrar with the provided NS records, and then add the necessary DNS records like A or CNAME to point to your infrastructure. This setup links your domain to Route 53, allowing you to manage DNS for your website or services.
+
+> [!TIP]
+> If you are a Red Hatter, you can order a lab environment on the [Red Hat Demo Platform](https://demo.redhat.com). Request environment `Red Hat Open Environments` > `AWS Blank Open Environment`.
+
+### Pull secret
+
+Retrieve the Pull Secret given from RedHat OpenShift Cluster Manager [site](https://console.redhat.com/openshift/create) for an AWS IPI installation. You should create a `./pullsecret.txt` file containing the pull secret to be used.
+
+
+
+### Environment variables
+
+Create a file with the environment variables that will be consistent during all the deployment. I suggest the following process:
+
+1. Copy the contents of the example file: `cp aws-ocp4-config.example aws-ocp4-config`.
+2. Edit the file with the values received from [Red Hat Demo Platform](https://demo.redhat.com).
+
+
+
+## Creating OCP IPI on AWS
+
+All the clusters (Hub and managed) for this workshop will be deployed using the same script: `ocp4-install.sh`. The way to execute this script is with the following parameters:
 
 ```bash
 sh ocp4-install.sh <cluster_name> <region_aws> <base_domain> <replicas_master> <replicas_worker> <vpc_id|false> <aws_id> <aws_secret> <instance_type> <amount_of_users>
 ```
-VPC id is required only if you are deploying on an existing VPC, otherwise specify "false". 
-Amount of users means users for the amount of managed cluster, in case you are not installing hub cluster it is not required.
+
+As most of the configuration is similar depending on the cluster type, I've created two sections to see how to deploy them. 
+
+Note that `<vpc_id|false>` is the parameter that allows to configure the VPC where the node will be deployed:
+
+* If this is the first cluster of the account (Hub), you need to set it to false, so that it creates a new VPC.
+* If you are installing a managed cluster, the Hub should be already present, so that you can reuse the same VPC. In such case, you will select the vpc-id created by the initial install.
+
+Also, note that `<amount_of_users>` refers to the users created in the htpasswd of the Hub Cluster. This parameter does not take effect on the Managed Clusters.
+
+Regarding the `<cluster_name>`, remember that it is mandatory to keep the same cluster names:
+* `argo-hub` for the Hub cluster.
+* `sno-X` for the managed clusters.
+
+
+
+### Deploying the Hub cluster
 
 ```bash
-sh ocp4-install.sh argo-hub <region_aws> <base_domain> 3 3 false <aws_id> <aws_secret> m6i.xlarge <amount_of_users> 
+source aws-ocp4-config
+
+sh ocp4-install.sh argo-hub $AWS_DEFAULT_REGION $BASE_DOMAIN 3 3 false $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $AMOUNT_OF_USERS
 ```
-For deploying a SNO managed cluster:
+
+
+### Deploying Managed Clusters (SNO)
+
+First, you need to wait until the Hub cluster is installed. Then, you can parallelize the installation of all the Managed Clusters with the following commands in different terminal tabs:
 
 ```bash
-sh ocp4-install.sh sno-1 <region_aws> <base_domain> 1 0 <vpc_id> <aws_id> <aws_secret> m6i.4xlarge
-```
-:warning: It is mandatory to name hub and sno clusters as *argo-hub* and *sno-x*
+source aws-ocp4-config
 
-You can check your VPC id on AWS console or by running this command:
+sh ocp4-install.sh sno-1 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE
+
+sh ocp4-install.sh sno-2 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE
+
+# Continue until you create all the required clusters
+```
+
+Feel free to use the following commands to check the VPCs on your AWS account:
+* Count number of VPCs: `aws ec2 describe-vpcs --query "length(Vpcs)" --output text`.
+* Get the first VPC ID: `aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text`.
+* Get Subnets from first VPC: `aws ec2 describe-subnets --filters Name=vpc-id,Values=$(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)  --output text`
+
+
+At this point, you should have the hub cluster and also one managed cluster for each workshop user.
+
+
+
+
+## Postinstall configuration
+
+All this process has been automated so that you don't have to execute it manually. Please execute the following script:
 
 ```bash
-aws ec2 describe-vpcs 
+sh postinstall.sh aws-ocp4-config
 ```
 
-## Deploy and configure ArgoCD
 
-:warning: You need to install argocd [CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/) and [yq](https://www.cyberithub.com/how-to-install-yq-command-line-tool-on-linux-in-5-easy-steps/).
+### Deploy and configure ArgoCD
+
+
 
 :warning: It's higly recommended to fllow de Declarative setup approach as it has the last updates.
 

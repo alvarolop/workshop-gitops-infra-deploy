@@ -9,11 +9,13 @@ echo "Login to argo hub cluster"
 # Deploy keycloak
 
 oc new-project keycloak
-oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/openshift-examples/keycloak.yaml \
+oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/openshift/keycloak.yaml \
     -p KEYCLOAK_ADMIN=admin \
     -p KEYCLOAK_ADMIN_PASSWORD=admin \
     -p NAMESPACE=keycloak \
 | oc create -f -
+
+sleep 10
 
 KEYCLOAK_URL=https://$(oc get route keycloak --template='{{ .spec.host }}') &&
 echo "" &&

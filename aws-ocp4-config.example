@@ -1,0 +1,30 @@
+#!/bin/bash
+# CHECK VARIABLE VALUES ARE BETWEEN DOUBLE QUOTES!
+
+#
+# AWS credentials
+# 
+
+# AWS Region. Change according to your location
+export AWS_DEFAULT_REGION=""
+## AWS Access Key ID
+export AWS_ACCESS_KEY_ID=""
+## AWS Secret Access Key
+export AWS_SECRET_ACCESS_KEY=""
+
+#
+# Cluster variables
+# 
+
+# Set "stable" if you want to install the latest stable version
+# https://mirror.openshift.com/pub/openshift-v4/clients/ocp/
+export OPENSHIFT_VERSION="4.17.17"
+
+# Copy directly from demo.redhat.com
+BASE_DOMAIN=""
+
+# Number of users for the workshop
+AMOUNT_OF_USERS=50
+
+# Machines instance type
+INSTANCE_TYPE="m7i.4xlarge"
