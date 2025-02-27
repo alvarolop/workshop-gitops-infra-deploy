@@ -13,8 +13,8 @@ export AWS_ACCESS_KEY_ID=${7}
 export AWS_SECRET_ACCESS_KEY=${8}
 INSTANCE_TYPE=${9}
 USERS=${10}
+RHOCM_PULL_SECRET=${11}
 
-WORKDIR=$(pwd)/workdir
 # Check if the directory exists, and create it if it doesn't
 if [ ! -d "$WORKDIR" ]; then
     mkdir -p "$WORKDIR"
@@ -56,7 +56,6 @@ rm -f $WORKDIR/install/install-dir-$CLUSTER_NAME/install-config.yaml && rm -f $W
 mkdir -p $WORKDIR/backup && mkdir $WORKDIR/backup/backup-$CLUSTER_NAME/
 mkdir -p $WORKDIR/install && mkdir $WORKDIR/install/install-dir-$CLUSTER_NAME/
 
-PULL_SECRET=$(cat ./pullsecret.txt)
 SSH_KEY=$(cat $WORKDIR/.ssh-keys/myocp_$CLUSTER_NAME.pub)
 
 if [ $VPC != false ]; then
@@ -112,7 +111,7 @@ platform:
   aws:
     region: $AWS_DEFAULT_REGION
     $EXISTING_VPC
-pullSecret: '$PULL_SECRET'
+pullSecret: '$RHOCM_PULL_SECRET'
 sshKey: $SSH_KEY
 EOF
 

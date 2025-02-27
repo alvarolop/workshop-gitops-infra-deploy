@@ -26,21 +26,21 @@ echo -e "\n==============================="
 echo -e "=      INSTALL OCP GITOPS     ="
 echo -e "===============================\n"
 
-echo -e "\n[1/3]Install the GitOps operator"
+echo -e "\n[1/2]Install the GitOps operator"
 oc apply -f gitops-operator
 
 echo -n "Waiting for pods ready..."
 while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
 
-echo -e "\n[2/3]Configure ArgoCD using GitOps"
+echo -e "\n[2/2]Configure ArgoCD using GitOps"
 cat application-hub-setup.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
 
 
-# echo -e "\n============================="
-# echo -e "=      INSTALL KEYCLOAK     ="
-# echo -e "=============================\n"
+echo -e "\n============================="
+echo -e "=      INSTALL KEYCLOAK     ="
+echo -e "=============================\n"
 
-# sh set-up-keycloak.sh 20 $BASE_DOMAIN
+sh set-up-keycloak.sh 20 $BASE_DOMAIN
 
 
 # echo -e "\n============================"

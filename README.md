@@ -5,8 +5,7 @@
    1. [Prerequisites](#prerequisites)
       1. [Install CLI tools](#install-cli-tools)
       2. [AWS account](#aws-account)
-      3. [Pull secret](#pull-secret)
-      4. [Environment variables](#environment-variables)
+      3. [Environment variables](#environment-variables)
    2. [Creating OCP IPI on AWS](#creating-ocp-ipi-on-aws)
       1. [Deploying the Hub cluster](#deploying-the-hub-cluster)
       2. [Deploying Managed Clusters (SNO)](#deploying-managed-clusters-sno)
@@ -56,12 +55,7 @@ In order to install OpenShift on AWS using IPI (Installer-Provisioned Infrastruc
 * To configure the top-level domain in AWS Route 53, create a hosted zone for your domain, update the registrar with the provided NS records, and then add the necessary DNS records like A or CNAME to point to your infrastructure. This setup links your domain to Route 53, allowing you to manage DNS for your website or services.
 
 > [!TIP]
-> If you are a Red Hatter, you can order a lab environment on the [Red Hat Demo Platform](https://demo.redhat.com). Request environment `Red Hat Open Environments` > `AWS Blank Open Environment`.
-
-### Pull secret
-
-Retrieve the Pull Secret given from RedHat OpenShift Cluster Manager [site](https://console.redhat.com/openshift/create) for an AWS IPI installation. You should create a `./pullsecret.txt` file containing the pull secret to be used.
-
+> If you are a Red Hatter, you can order a lab environment on the [Red Hat Demo Platform](https://catalog.demo.redhat.com/catalog?item=babylon-catalog-prod/sandboxes-gpte.sandbox-open.prod&utm_source=webapp&utm_medium=share-link). Request environment `Red Hat Open Environments` > `AWS Blank Open Environment`.
 
 
 ### Environment variables
@@ -69,7 +63,8 @@ Retrieve the Pull Secret given from RedHat OpenShift Cluster Manager [site](http
 Create a file with the environment variables that will be consistent during all the deployment. I suggest the following process:
 
 1. Copy the contents of the example file: `cp aws-ocp4-config.example aws-ocp4-config`.
-2. Edit the file with the values received from [Red Hat Demo Platform](https://demo.redhat.com).
+2. Retrieve the Pull Secret given from RedHat OpenShift Cluster Manager [site](https://console.redhat.com/openshift/create) for an AWS IPI installation. Add it to the `aws-ocp4-config` file.
+3. Edit the file with the values received from [Red Hat Demo Platform](https://demo.redhat.com).
 
 
 
@@ -78,7 +73,7 @@ Create a file with the environment variables that will be consistent during all 
 All the clusters (Hub and managed) for this workshop will be deployed using the same script: `ocp4-install.sh`. The way to execute this script is with the following parameters:
 
 ```bash
-sh ocp4-install.sh <cluster_name> <region_aws> <base_domain> <replicas_master> <replicas_worker> <vpc_id|false> <aws_id> <aws_secret> <instance_type> <amount_of_users>
+sh ocp4-install.sh <cluster_name> <region_aws> <base_domain> <replicas_master> <replicas_worker> <vpc_id|false> <aws_id> <aws_secret> <instance_type> <amount_of_users> <rh_pull_secret>
 ```
 
 As most of the configuration is similar depending on the cluster type, I've created two sections to see how to deploy them. 
@@ -101,7 +96,7 @@ Regarding the `<cluster_name>`, remember that it is mandatory to keep the same c
 ```bash
 source aws-ocp4-config
 
-sh ocp4-install.sh argo-hub $AWS_DEFAULT_REGION $BASE_DOMAIN 3 3 false $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $AMOUNT_OF_USERS
+sh ocp4-install.sh argo-hub $AWS_DEFAULT_REGION $BASE_DOMAIN 3 3 false $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $AMOUNT_OF_USERS $RHOCM_PULL_SECRET
 ```
 
 
@@ -112,9 +107,9 @@ First, you need to wait until the Hub cluster is installed. Then, you can parall
 ```bash
 source aws-ocp4-config
 
-sh ocp4-install.sh sno-1 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE
+sh ocp4-install.sh sno-1 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $RHOCM_PULL_SECRET
 
-sh ocp4-install.sh sno-2 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE
+sh ocp4-install.sh sno-2 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $RHOCM_PULL_SECRET
 
 # Continue until you create all the required clusters
 ```

@@ -28,3 +28,6 @@ AMOUNT_OF_USERS=50
 
 # Machines instance type
 INSTANCE_TYPE="m7i.4xlarge"
+
+# Red Hat Pull Secret
+RHOCM_PULL_SECRET=''
