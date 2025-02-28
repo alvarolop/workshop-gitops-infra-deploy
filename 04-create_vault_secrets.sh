@@ -7,24 +7,9 @@ VAULT_TOKEN="root"                  # Default token in dev mode
 # Inline JSON definition of secrets
 SECRETS_JSON='[
     {
-        "path": "secret/data/demo1",
+        "path": "secret/data/demo",
         "data": {
-            "key1": "value1",
-            "key2": "value2"
-        }
-    },
-    {
-        "path": "secret/data/demo2",
-        "data": {
-            "key1": "value3",
-            "key2": "value4"
-        }
-    },
-    {
-        "path": "secret/data/demo3",
-        "data": {
-            "key1": "value5",
-            "key2": "value6"
+            "password": "password123"
         }
     }
 ]'
@@ -36,7 +21,7 @@ for row in $(echo "$SECRETS_JSON" | jq -c '.[]'); do
     data=$(echo "$row" | jq -c '.data')
 
     echo "Writing secret to $path"
-    curl -s \
+    curl -k -s \
         --header "X-Vault-Token: $VAULT_TOKEN" \
         --request POST \
         --data "{\"data\":$data}" \
@@ -51,7 +36,7 @@ done
 
 # Enable Kubernetes authentication
 echo -e "\nEnabling Kubernetes authentication..."
-curl -s \
+curl -k -s \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     --request POST \
     --data '{"type": "kubernetes"}' \
@@ -68,7 +53,7 @@ fi
 echo -e "\nConfiguring Kubernetes authentication..."
 KUBERNETES_SERVICE_HOST=172.30.0.1
 KUBERNETES_SERVICE_PORT=443
-curl -s \
+curl -k -s \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     --request POST \
     --data "{
@@ -85,7 +70,7 @@ fi
 
 # Create a policy for the role
 echo -e "\nCreating policy svc-policy..."
-curl -s \
+curl -k -s \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     --request PUT \
     --data '{
@@ -101,7 +86,7 @@ fi
 
 # Create a role binding Kubernetes service account to the policy
 echo -e "\nCreating role webapp..."
-curl -s \
+curl -k -s \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     --request POST \
     --data '{
@@ -117,3 +102,66 @@ if [ $? -eq 0 ]; then
 else
     echo "Failed to create role webapp"
 fi
+
+
+
+# Enable AppRole authentication
+echo -e "\nEnabling AppRole authentication..."
+curl -k -s \
+    --header "X-Vault-Token: $VAULT_TOKEN" \
+    --request POST \
+    --data '{"type": "approle"}' \
+    "$VAULT_ADDR/v1/sys/auth/approle" > /dev/null
+
+if [ $? -eq 0 ]; then
+    echo "AppRole authentication enabled"
+else
+    echo "Failed to enable AppRole authentication"
+fi
+
+# Create an AppRole named argocd
+echo -e "\nCreating AppRole argocd..."
+curl -k -s \
+    --header "X-Vault-Token: $VAULT_TOKEN" \
+    --request POST \
+    --data '{
+        "secret_id_ttl": "120h",
+        "token_num_uses": 1000,
+        "token_ttl": "120h",
+        "token_max_ttl": "120h",
+        "secret_id_num_uses": 4000,
+        "policies": ["demo"]
+    }' \
+    "$VAULT_ADDR/v1/auth/approle/role/argocd" > /dev/null
+
+if [ $? -eq 0 ]; then
+    echo "AppRole argocd created"
+else
+    echo "Failed to create AppRole argocd"
+fi
+
+# Retrieve the role_id for argocd
+echo -e "\nRetrieving role_id for AppRole argocd..."
+ROLE_ID=$(curl -k -s \
+            --header "X-Vault-Token: $VAULT_TOKEN" \
+            "$VAULT_ADDR/v1/auth/approle/role/argocd/role-id" | jq -r '.data.role_id')
+
+if [ $? -eq 0 ] && [ ! -z "$ROLE_ID" ]; then
+    echo "Retrieved role_id for argocd: $ROLE_ID"
+else
+    echo "Failed to retrieve role_id for argocd"
+fi
+
+# Generate a secret_id for argocd
+echo -e "\nGenerating secret_id for AppRole argocd..."
+SECRET_ID=$(curl -k -s \
+              --header "X-Vault-Token: $VAULT_TOKEN" \
+              --request POST \
+              "$VAULT_ADDR/v1/auth/approle/role/argocd/secret-id" | jq -r '.data.secret_id')
+
+if [ $? -eq 0 ] && [ ! -z "$SECRET_ID" ]; then
+    echo "Generated secret_id for argocd: $SECRET_ID"
+else
+    echo "Failed to generate secret_id for argocd"
+fi
+

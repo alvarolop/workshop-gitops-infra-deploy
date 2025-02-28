@@ -181,35 +181,7 @@ After Vault is ready, you have to populate it with the following script:
 04-create_vault_secrets.sh
 ```
 
-
-
-```bash
-# enable kv-v2 engine in Vault
-oc exec vault-0 -- vault secrets enable kv-v2
-
-# create kv-v2 secret with two keys # Put your secrets here
-oc exec vault-0 -- vault kv put kv-v2/demo password="password123"
-
-oc exec vault-0 -- vault kv get kv-v2/demo
-
-oc rsh vault-0 # Then run these commands
-
-# create policy to enable reading above secret
-vault policy write demo - <<EOF # Replace with your app name
-path "kv-v2/data/demo" {
-  capabilities = ["read"]
-}
-EOF
-
-vault auth enable approle
-
-vault write auth/approle/role/argocd secret_id_ttl=120h token_num_uses=1000 token_ttl=120h token_max_ttl=120h secret_id_num_uses=4000  token_policies=demo
-
-vault read auth/approle/role/argocd/role-id
-
-vault write -f auth/approle/role/argocd/secret-id
-```
-Bear in mind you need to update this secret on [main](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) and [main-day2](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main-day2/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) branch to so users will clone and pull the right credentials.
+<!-- Bear in mind you need to update this secret on [main](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) and [main-day2](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main-day2/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) branch to so users will clone and pull the right credentials. -->
 
 
 
@@ -234,13 +206,23 @@ Then, expose ipa service as NodePort and allow external traffic on AWS by config
 
 ```bash
 while [[ $(oc get pods -l app=freeipa -n ipa -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
-oc expose service ipa  --type=NodePort --name=ipa-nodeport --generator="service/v2" -n ipa
+oc patch service freeipa -n ipa -p '{"spec":{"type":"NodePort","ports":[{"name":"ldap","protocol":"TCP","port":389,"targetPort":389,"nodePort":30389}]}}'
 ```
 
-Make sure you have enabled a security group for allowing incoming traffic to port 389 (nodeport) and origin 10.0.0.0/16. You can test connectivity running this command from your managed cluster node:
+<!-- 
+Then, enable a security group to allow incoming traffic to port 389 (NodePort) and origin 10.0.0.0/16.
 
 ```bash
-nc -vz <hub_worker_node_ip> <ldap_nodeport>
+sh 05-aws-sg-ldap-traffic.sh aws-ocp4-config
+``` 
+-->
+
+You can test connectivity running this command from your managed cluster node:
+
+```bash
+@ Retrieve the node IP
+oc get nodes --selector='node-role.kubernetes.io/worker' -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'
+nc -vz $WORKER_IP 30389 # Important, as we are exposing it in nodePort, we need to use 30389 instead of 389
 ```
 
 ### Create FreeIPA users
@@ -248,44 +230,8 @@ nc -vz <hub_worker_node_ip> <ldap_nodeport>
 To create FreeIPA users, run these commands:
 
 ```bash
-# Login to kerberos
-oc exec -n ipa -it deployment/freeipa -- \
-    sh -c "echo Passw0rd123 | /usr/bin/kinit admin && \
-    echo Passw0rd | \
-    ipa user-add ldap_admin --first=ldap \
-    --last=admin --email=ldap_admin@redhatlabs.dev --password"
-    
-# Create groups if they dont exist
-
-oc exec -n ipa -it deployment/freeipa -- \
-    sh -c "ipa group-add student --desc 'wrapper group' || true && \
-    ipa group-add ocp_admins --desc 'admin openshift group' || true && \
-    ipa group-add ocp_devs --desc 'edit openshift group' || true && \
-    ipa group-add ocp_viewers --desc 'view openshift group' || true && \
-    ipa group-add-member student --groups=ocp_admins --groups=ocp_devs --groups=ocp_viewers || true"
-
-# Add demo users
-
-oc exec -n ipa -it deployment/freeipa -- \
-    sh -c "echo Passw0rd | \
-    ipa user-add paul --first=paul \
-    --last=ipa --email=paulipa@redhatlabs.dev --password || true && \
-    ipa group-add-member ocp_admins --users=paul"
-
-oc exec -n ipa -it deployment/freeipa -- \
-    sh -c "echo Passw0rd | \
-    ipa user-add henry --first=henry \
-    --last=ipa --email=henryipa@redhatlabs.dev --password || true && \
-    ipa group-add-member ocp_devs --users=henry"
-
-oc exec -n ipa -it deployment/freeipa -- \
-    sh -c "echo Passw0rd | \
-    ipa user-add mark --first=mark \
-    --last=ipa --email=markipa@redhatlabs.dev --password || true && \
-    ipa group-add-member ocp_viewers --users=mark"
+./05-init-freeipa.sh
 ```
-
-
 
 
 
@@ -297,13 +243,14 @@ If you want to delete a cluster, first run this command to destroy it from AWS:
 
 ```bash
 CLUSTER_NAME=<cluster_name>
-openshift-install destroy cluster --dir install/install-dir-$CLUSTER_NAME --log-level info
+openshift-install destroy cluster --dir workdir/install/install-dir-$CLUSTER_NAME --log-level info
 ```
+
 Then remove it from ArgoCD instance:
 
 ```bash
 # Make sure you are logged in cluster hub, unless you are trying to delete this cluster that this section is not required
-export KUBECONFIG=./install/install-dir-argo-hub/auth/kubeconfig
+export KUBECONFIG=./workdir/install/install-dir-argo-hub/auth/kubeconfig
 # Login to argo server
 ARGO_SERVER=$(oc get route -n openshift-operators argocd-server  -o jsonpath='{.spec.host}')
 ADMIN_PASSWORD=$(oc get secret argocd-cluster -n openshift-operators  -o jsonpath='{.data.admin\.password}' | base64 -d)
@@ -311,6 +258,6 @@ ADMIN_PASSWORD=$(oc get secret argocd-cluster -n openshift-operators  -o jsonpat
 argocd login $ARGO_SERVER --username admin --password $ADMIN_PASSWORD --insecure
 argocd cluster rm $CLUSTER_NAME
 # Then remove installation directories
-rm -rf ./backup/backup-$CLUSTER_NAME
-rm -rf ./install/install-dir-$CLUSTER_NAME
+rm -rf ./workdir/backup/backup-$CLUSTER_NAME
+rm -rf ./workdir/install/install-dir-$CLUSTER_NAME
 ```

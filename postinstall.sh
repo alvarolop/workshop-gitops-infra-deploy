@@ -60,8 +60,21 @@ cat 05-application-freeipa.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc appl
 echo -n "Waiting for pods ready..."
 while [[ $(oc get pods -l app=freeipa -n ipa -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
 
-oc expose service ipa  --type=NodePort --name=ipa-nodeport --generator="service/v2" -n ipa
-
+# Expose it using NodePort and use 389 for LDAP on the node port 
+oc patch service freeipa -n ipa -p '{
+  "spec": {
+    "type": "NodePort",
+    "ports": [
+      {
+        "name": "ldap",
+        "protocol": "TCP",
+        "port": 389,
+        "targetPort": 389,
+        "nodePort": 30389
+      }
+    ]
+  }
+}'
 
 echo -e "\tConfiguring groups and users..."
 
