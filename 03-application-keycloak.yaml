@@ -12,7 +12,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/alvarolop/workshop-gitops-infra-deploy.git
-    targetRevision: master
+    targetRevision: main
     path: 03-keycloak
     helm:
       values: |

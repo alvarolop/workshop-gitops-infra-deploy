@@ -17,7 +17,8 @@ spec:
     chart: ipa
     helm:
       values: |
-        app_domain: apps.$CLUSTER_DOMAIN
+        app_domain: apps.argo-hub.$CLUSTER_DOMAIN
+        admin_password: "Passw0rd123"
   syncPolicy:
     automated:
       prune: false

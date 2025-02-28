@@ -13,7 +13,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/alvarolop/workshop-gitops-infra-deploy.git
-    targetRevision: master
+    targetRevision: main
     path: 02-gitops-setup
     helm:
       values: |

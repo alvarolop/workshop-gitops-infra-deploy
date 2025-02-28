@@ -124,8 +124,15 @@ echo "Confirm when you are ready:" ; echo " "
 
 install_ocp() {
     $WORKDIR/openshift-install create cluster --dir=$WORKDIR/install/install-dir-$CLUSTER_NAME --log-level=info
+}
+
+configure_oauth() {
     echo "Set HTPasswd as Identity Provider" ; echo " "
-    ./oauth.sh $CLUSTER_NAME $VPC $USERS
+    if [ $VPC == false ]; then
+      oc apply -k auth/overlays/argo-hub
+    else
+      oc apply -k auth/overlays/sno
+    fi
     ssh-add -D
 }
 
@@ -134,12 +141,12 @@ cleanup() {
     rm -f $WORKDIR/.ssh-keys/myocp_$CLUSTER_NAME
 }
 
-
 while true; do
     read -p "Proceed with OCP cluster installation: yY|nN -> " yn
     case $yn in
-        [Yy]* ) echo "Installing OCP4 cluster... " ; install_ocp ; break;;
+        [Yy]* ) echo "Installing OCP4 cluster... " ; install_ocp ; configure_oauth ; break;;
         [Nn]* ) echo "Aborting installation..." ; cleanup ; ssh-add -D ; exit;;
         * ) echo "Select yes or no";;
     esac
 done
+

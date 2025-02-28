@@ -233,7 +233,7 @@ helm template keycloak --set global.clusterDomain=$BASE_DOMAIN --set numberOfClu
 Then, expose ipa service as NodePort and allow external traffic on AWS by configuring the security groups.
 
 ```bash
-sleep 10
+while [[ $(oc get pods -l app=freeipa -n ipa -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
 oc expose service ipa  --type=NodePort --name=ipa-nodeport --generator="service/v2" -n ipa
 ```
 
@@ -249,7 +249,7 @@ To create FreeIPA users, run these commands:
 
 ```bash
 # Login to kerberos
-oc exec -it dc/ipa -n ipa -- \
+oc exec -n ipa -it deployment/freeipa -- \
     sh -c "echo Passw0rd123 | /usr/bin/kinit admin && \
     echo Passw0rd | \
     ipa user-add ldap_admin --first=ldap \
@@ -257,7 +257,7 @@ oc exec -it dc/ipa -n ipa -- \
     
 # Create groups if they dont exist
 
-oc exec -it dc/ipa -n ipa -- \
+oc exec -n ipa -it deployment/freeipa -- \
     sh -c "ipa group-add student --desc 'wrapper group' || true && \
     ipa group-add ocp_admins --desc 'admin openshift group' || true && \
     ipa group-add ocp_devs --desc 'edit openshift group' || true && \
@@ -266,19 +266,19 @@ oc exec -it dc/ipa -n ipa -- \
 
 # Add demo users
 
-oc exec -it dc/ipa -n ipa -- \
+oc exec -n ipa -it deployment/freeipa -- \
     sh -c "echo Passw0rd | \
     ipa user-add paul --first=paul \
     --last=ipa --email=paulipa@redhatlabs.dev --password || true && \
     ipa group-add-member ocp_admins --users=paul"
 
-oc exec -it dc/ipa -n ipa -- \
+oc exec -n ipa -it deployment/freeipa -- \
     sh -c "echo Passw0rd | \
     ipa user-add henry --first=henry \
     --last=ipa --email=henryipa@redhatlabs.dev --password || true && \
     ipa group-add-member ocp_devs --users=henry"
 
-oc exec -it dc/ipa -n ipa -- \
+oc exec -n ipa -it deployment/freeipa -- \
     sh -c "echo Passw0rd | \
     ipa user-add mark --first=mark \
     --last=ipa --email=markipa@redhatlabs.dev --password || true && \
