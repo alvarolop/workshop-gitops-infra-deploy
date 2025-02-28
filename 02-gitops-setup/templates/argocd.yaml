@@ -8,6 +8,7 @@ metadata:
   {{- if $.Values.global.argocd.enabled }}
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   {{- end }}    
 spec:
   resourceCustomizations: |
@@ -107,6 +108,7 @@ spec:
       - TaskRun
       - PipelineRun        
   server:
+    replicas: 2
     resources:
       limits:
         cpu: 500m
