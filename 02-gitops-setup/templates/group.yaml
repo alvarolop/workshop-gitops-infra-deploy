@@ -1,0 +1,26 @@
+{{- if $.Values.global.render -}}
+{{- range $key, $val := $.Values.global.sno }}
+---
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: admin-sno-{{ $key }}
+  {{- if $.Values.global.argocd.enabled }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  {{- end }}  
+users:
+  - user-{{ $key }}
+{{- end }} 
+---
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: cluster-admins
+  {{- if $.Values.global.argocd.enabled }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  {{- end }}  
+users:
+  - admin 
+{{- end -}} 

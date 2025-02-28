@@ -1,0 +1,33 @@
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-db
+    usernameSecret:
+      name: postgresql-db-credentials
+      key: username
+    passwordSecret:
+      name: postgresql-db-credentials
+      key: password
+  bootstrapAdmin:
+    user:
+      secret: keycloak-admin
+  http:
+    tlsSecret: keycloak-tls
+  # hostname:
+  #   hostname: test.keycloak.org
+  ingress:
+    annotations:
+      route.openshift.io/destination-ca-certificate-secret: keycloak-tls
+      route.openshift.io/termination: reencrypt
+    className: openshift-default
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers

@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: openshift-gitops
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/alvarolop/workshop-gitops-infra-deploy.git
+    targetRevision: master
+    path: 03-keycloak
+    helm:
+      values: |
+        global:
+          clusterDomain: $CLUSTER_DOMAIN
+        numberOfClusters: $NUM_CLUSTERS
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false

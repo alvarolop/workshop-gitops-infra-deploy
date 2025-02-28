@@ -2,17 +2,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: hub-setup
+  labels:
+    app: gitops-setup
+  name: gitops-setup
   namespace: openshift-gitops
 spec:
   destination:
-    namespace: openshift-gitops
     server: https://kubernetes.default.svc
+    namespace: openshift-gitops
   project: default
   source:
-    repoURL: https://github.com/alvarolop/workshop-gitops-content-deploy.git
-    targetRevision: setup-sno
-    path: hub-setup/charts/gitops-setup
+    repoURL: https://github.com/alvarolop/workshop-gitops-infra-deploy.git
+    targetRevision: master
+    path: 02-gitops-setup
     helm:
       values: |
         domain: $CLUSTER_DOMAIN
@@ -79,5 +81,5 @@ spec:
             password: redhat
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      prune: false
+      selfHeal: false

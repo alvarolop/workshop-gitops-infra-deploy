@@ -1,0 +1,130 @@
+{{- if $.Values.global.render -}}
+---
+kind: ArgoCD
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  name: argocd
+  namespace: {{ $.Values.global.namespace }}
+  {{- if $.Values.global.argocd.enabled }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  {{- end }}    
+spec:
+  resourceCustomizations: |
+    operators.coreos.com/Subscription:
+      health.lua: |      
+        health_status = {}
+        if obj.status ~= nil then
+          if obj.status.conditions ~= nil then
+            numDegraded = 0
+            numPending = 0
+            msg = ""
+            for i, condition in pairs(obj.status.conditions) do
+              msg = msg .. i .. ": " .. condition.type .. " | " .. condition.status .. "\n"
+              if condition.type == "InstallPlanPending" and condition.status == "True" then
+                numPending = numPending + 1
+              elseif (condition.type == "InstallPlanMissing" and condition.reason ~= "ReferencedInstallPlanNotFound") then
+                numDegraded = numDegraded + 1
+              elseif (condition.type == "CatalogSourcesUnhealthy" or condition.type == "InstallPlanFailed" or condition.type == "ResolutionFailed") and condition.status == "True" then
+                numDegraded = numDegraded + 1
+              end
+            end
+            if numDegraded == 0 and numPending == 0 then
+              health_status.status = "Healthy"
+              health_status.message = msg
+              return health_status
+            elseif numPending > 0 and numDegraded == 0 then
+              health_status.status = "Progressing"
+              health_status.message = "An install plan for a subscription is pending installation"
+              return health_status
+            else
+              health_status.status = "Degraded"
+              health_status.message = msg
+              return health_status
+            end
+          end
+        end
+        health_status.status = "Progressing"
+        health_status.message = "An install plan for a subscription is pending installation"
+        return health_status
+  applicationSet:
+    logLevel: info
+  resourceTrackingMethod: annotation+label
+  controller:
+    sharding:
+      enabled: true
+      replicas: {{ $.Values.global.sharding }}   
+    logLevel: debug
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2048Mi
+      requests:
+        cpu: 250m
+        memory: 1024Mi
+  ha:
+    enabled: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+  rbac:
+    defaultPolicy: ''
+    policy: |
+      {{- range $key, $val := $.Values.global.sno }}
+      p, role:admin-sno-{{ $key }}, applications, *, project-sno-{{ $key }}/*, allow 
+      p, role:admin-sno-{{ $key }}, clusters, get, project-sno-{{ $key }}/*, allow
+      p, role:admin-sno-{{ $key }}, repositories, *, project-sno-{{ $key }}/*, allow
+      g, admin-sno-{{ $key }}, role:admin-sno-{{ $key }}
+      {{- end }}
+      g, system:cluster-admins, role:admin
+    scopes: '[groups]'
+  redis:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+  repo:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TaskRun
+      - PipelineRun        
+  server:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 125m
+        memory: 128Mi
+    route:
+      enabled: true
+  sso:
+    dex:
+      openShiftOAuth: true
+      resources:
+        limits:
+          cpu: 500m
+          memory: 256Mi
+        requests:
+          cpu: 250m
+          memory: 128Mi
+    provider: dex
+{{- end -}}  

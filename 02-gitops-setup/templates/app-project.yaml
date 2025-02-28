@@ -1,0 +1,29 @@
+{{- if $.Values.global.render -}}
+{{- range $key, $val := $.Values.global.sno }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: project-sno-{{ $key }}
+  namespace: {{ $.Values.global.namespace }}
+  {{- if $.Values.global.argocd.enabled }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  {{- end }}    
+spec:
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  destinations:
+    - namespace: '*'
+      server: 'https://api.sno-{{ $key }}.*.opentlc.com:6443'
+    - namespace: '*'
+      server: 'https://kubernetes.default.svc'
+  roles:
+    - groups:
+        - admin-sno-{{ $key }}
+      name: admin-sno-{{ $key }}
+  sourceRepos:
+    - '*'
+{{- end }}    
+{{- end -}}  

@@ -1,0 +1,48 @@
+{{- range $i := until (.Values.numberOfClusters | int) }}
+{{- $instance := add $i 1 }}
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: myrealm-{{ $instance }}
+  namespace: {{ $.Values.global.namespace }}
+spec:
+  keycloakCRName: keycloak
+  realm:
+    id: myrealm-{{ $instance }}
+    realm: myrealm-{{ $instance }}
+    displayName: My Realm {{ $instance }}
+    enabled: true
+    clients:
+      # - redirectUris:
+      #     - 'https://backstage-developer-hub-demo-project.apps.cluster-b97l9.dynamic.redhatworkshops.io/*'
+      #   enabled: true
+      #   clientId: rhdh-client
+      #   
+      #   standardFlowEnabled: true
+      #   serviceAccountsEnabled: true
+      - name: myclient
+        clientId: myclient
+        # secret: MiF4P4tDFl3oWrisy7VdUOqngoNlv72D
+        enabled: true
+        redirectUris:
+          - "https://oauth-openshift.apps.sno-{{ $instance }}.{{ $.Values.global.clusterDomain }}/oauth2callback/keycloak/*"
+        directAccessGrantsEnabled: true
+    users:
+      # - credentials:
+      #     - value: rhdh
+      #   lastName: rhdh-demo
+      #   enabled: true
+      #   emailVerified: true
+      #   username: myuser-1
+      #   firstName: MyUser1
+      #   email: myuser-1@rhdh-demo.com
+      - username: myuser-{{ $instance }}
+        email: myuser-{{ $instance }}@example.org
+        emailVerified: true
+        enabled: true
+        credentials:
+          - type: password
+            value: myuser-{{ $instance }}
+    groups: []
+{{- end }}

@@ -27,25 +27,40 @@ echo -e "=      INSTALL OCP GITOPS     ="
 echo -e "===============================\n"
 
 echo -e "\n[1/2]Install the GitOps operator"
-oc apply -f gitops-operator
+oc apply -f 01-gitops-operator
 
 echo -n "Waiting for pods ready..."
 while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
 
 echo -e "\n[2/2]Configure ArgoCD using GitOps"
-cat application-hub-setup.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
+cat 02-application-gitops-setup.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
 
 
 echo -e "\n============================="
 echo -e "=      INSTALL KEYCLOAK     ="
 echo -e "=============================\n"
 
-sh set-up-keycloak.sh 20 $BASE_DOMAIN
+cat 03-application-keycloak.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN NUM_CLUSTERS=20 envsubst | oc apply -f -
+
+echo -e "\n============================="
+echo -e "=   INSTALL HASHICORP VAULT  ="
+echo -e "=============================\n"
+
+oc apply -f 04-application-hashicorp-vault-server.yaml
+
+echo "Vault has been deployed and exposed in the 'vault' namespace."
 
 
-# echo -e "\n============================"
-# echo -e "=      INSTALL FREEIPA     ="
-# echo -e "============================\n"
+echo -e "\n============================"
+echo -e "=      INSTALL FREEIPA     ="
+echo -e "============================\n"
+
+cat 05-application-freeipa.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
+
+echo -n "Waiting for pods ready..."
+while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
+
+
 
 # # Add Red Hat COP Helm repository and update
 # helm repo add redhat-cop https://redhat-cop.github.io/helm-charts
@@ -101,28 +116,7 @@ sh set-up-keycloak.sh 20 $BASE_DOMAIN
 #     ipa group-add-member ocp_viewers --users=mark"
 
 
-# echo -e "\n============================="
-# echo -e "=   INSTALL HASHICORP VAULT  ="
-# echo -e "=============================\n"
 
-# # Add the HashiCorp Helm repository and update it
-# helm repo add hashicorp https://helm.releases.hashicorp.com
-# helm repo update
-
-# # Create a new OpenShift project for Vault
-# oc new-project vault
-
-# # Install Vault using Helm in development mode with OpenShift-specific settings
-# helm install vault hashicorp/vault \
-#     --namespace=vault \
-#     --set "global.openshift=true" \
-#     --set "server.dev.enabled=true" \
-#     --values values.openshift.yaml
-
-# # Expose the Vault service to create an OpenShift route
-# oc expose svc vault -n vault
-
-# echo "Vault has been deployed and exposed in the 'vault' namespace."
 
 
 

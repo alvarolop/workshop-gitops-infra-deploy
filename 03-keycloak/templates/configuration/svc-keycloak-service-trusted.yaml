@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: keycloak-tls
+  labels:
+    app: keycloak
+  name: keycloak-service-trusted
+  namespace: {{ .Values.global.namespace }}
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: https
+      port: 8443
+  selector:
+    app: keycloak
+    app.kubernetes.io/instance: keycloak

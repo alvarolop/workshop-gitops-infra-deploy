@@ -1,0 +1,19 @@
+# Default values for gitops setup
+
+global:
+  render: true
+  argocd:
+    enabled: true
+    controller: openshift-operators
+  operators: 
+    enabled: true
+  rbac: 
+    enabled: true 
+  namespace: openshift-operators
+  domain: <domain>
+  # sharding: <amount_of_sno>  
+  sno:
+  #   1: 
+  #     token: <token>
+  #     username: <username>
+  #     password: <password>

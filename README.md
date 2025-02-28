@@ -12,10 +12,10 @@
    3. [Postinstall configuration](#postinstall-configuration)
       1. [1. Deploy and configure ArgoCD declaratively](#1-deploy-and-configure-argocd-declaratively)
       2. [2. Deploy keycloak](#2-deploy-keycloak)
-   4. [Deploy FreeIPA](#deploy-freeipa)
-      1. [Create FreeIPA users](#create-freeipa-users)
-   5. [Deploy vault server](#deploy-vault-server)
-   6. [Destroy cluster](#destroy-cluster)
+      3. [3. Deploy vault server](#3-deploy-vault-server)
+      4. [4. Deploy FreeIPA](#4-deploy-freeipa)
+      5. [Create FreeIPA users](#create-freeipa-users)
+   4. [Destroy cluster](#destroy-cluster)
 
 
 > [!IMPORTANT]
@@ -139,44 +139,104 @@ At this point, you should have the hub cluster and also one managed cluster for 
 
 If you didn't run the previous command that automates everything, follow these steps:
 
-1. Install the OpenShift GitOps operator: `oc apply -f gitops-operator`.
+1. Install the OpenShift GitOps operator: `oc apply -f 01-gitops-operator`.
 2. Create a branch `setup-sno` from the repo [workshop-gitops-content-deploy](https://github.com/alvarolop/workshop-gitops-content-deploy.git).
-3. Adapt the ArgoCD application to your credentials and apply it `oc apply -f application-hub-setup.yaml`.
+3. Adapt the ArgoCD application to your credentials and apply it `oc apply -f 02-application-gitops-setup.yaml`.
 
 
 
 
 ### 2. Deploy keycloak
 
-To deploy an instance of keycloak and create the corresponding realms, client and users, run this script:
+If you didn't run the previous command that automates everything, follow these steps:
 
 ```bash
-sh set-up-keycloak.sh <number_of_clusters> <subdomain | sandoboxXXX.opentlc.com>
+source aws-ocp4-config
+# Using the app
+cat 03-application-keycloak.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN NUM_CLUSTERS=3 envsubst | oc apply -f -
+# or
+# using the Helm Chart directly
+helm template keycloak --set global.clusterDomain=$BASE_DOMAIN --set numberOfClusters=3 | oc apply -f -
 ```
-Beware you need to update your [certificate](https://github.com/romerobu/helm-infra-gitops-workshop/blob/main/charts/oauth/files/ca.crt) on your helm charts repo:
+
+
+> [!WARNING]
+> Check if this is relevant anymore:
+> Beware you need to update your [certificate](https://github.com/romerobu/helm-infra-gitops-workshop/blob/main/charts/oauth/files/ca.crt) on your helm charts repo:
+> ```bash
+> oc -n openshift-ingress-operator get secret router-ca -o jsonpath="{ .data.tls\.crt }" | base64 -d -i 
+> ```
+
+### 3. Deploy vault server
+
+If you didn't run the previous command that automates everything, follow these steps:
 
 ```bash
-oc -n openshift-ingress-operator get secret router-ca -o jsonpath="{ .data.tls\.crt }" | base64 -d -i 
+oc apply -f 04-application-hashicorp-vault-server.yaml
 ```
-## Deploy FreeIPA
+
+After Vault is ready, you have to populate it with the following script:
+
+```bash
+04-create_vault_secrets.sh
+```
+
+
+
+```bash
+# enable kv-v2 engine in Vault
+oc exec vault-0 -- vault secrets enable kv-v2
+
+# create kv-v2 secret with two keys # Put your secrets here
+oc exec vault-0 -- vault kv put kv-v2/demo password="password123"
+
+oc exec vault-0 -- vault kv get kv-v2/demo
+
+oc rsh vault-0 # Then run these commands
+
+# create policy to enable reading above secret
+vault policy write demo - <<EOF # Replace with your app name
+path "kv-v2/data/demo" {
+  capabilities = ["read"]
+}
+EOF
+
+vault auth enable approle
+
+vault write auth/approle/role/argocd secret_id_ttl=120h token_num_uses=1000 token_ttl=120h token_max_ttl=120h secret_id_num_uses=4000  token_policies=demo
+
+vault read auth/approle/role/argocd/role-id
+
+vault write -f auth/approle/role/argocd/secret-id
+```
+Bear in mind you need to update this secret on [main](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) and [main-day2](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main-day2/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) branch to so users will clone and pull the right credentials.
+
+
+
+
+
+
+### 4. Deploy FreeIPA
 
 Follow the instructions [here](https://github.com/redhat-cop/helm-charts/tree/master/charts/ipa) to deploy FreeIPA server.
 
 ```bash
-git clone https://github.com/redhat-cop/helm-charts.git
+source aws-ocp4-config
+# Using the app
+cat 05-application-freeipa.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
+# or
+# using the Helm Chart directly
+helm template keycloak --set global.clusterDomain=$BASE_DOMAIN --set numberOfClusters=3 | oc apply -f -
 
-cd helm-charts/charts
-helm dep up ipa
-cd ipa/
-helm upgrade --install ipa . --namespace=ipa --create-namespace --set app_domain=apps.<domain>
 ```
-You have to wait for IPA to be fully deployed to run this commands, verify ipa-1-deploy pod is completed.
 
 Then, expose ipa service as NodePort and allow external traffic on AWS by configuring the security groups.
 
 ```bash
+sleep 10
 oc expose service ipa  --type=NodePort --name=ipa-nodeport --generator="service/v2" -n ipa
 ```
+
 Make sure you have enabled a security group for allowing incoming traffic to port 389 (nodeport) and origin 10.0.0.0/16. You can test connectivity running this command from your managed cluster node:
 
 ```bash
@@ -225,57 +285,11 @@ oc exec -it dc/ipa -n ipa -- \
     ipa group-add-member ocp_viewers --users=mark"
 ```
 
-## Deploy vault server
 
-To deploy an instance of vault server:
 
-```bash
-git clone https://github.com/hashicorp/vault-helm.git
 
-helm repo add hashicorp https://helm.releases.hashicorp.com
 
-oc new-project vault
 
-helm install vault hashicorp/vault \
-    --set "global.openshift=true" \
-    --set "server.dev.enabled=true" --values values.openshift.yaml
-    
-oc expose svc vault -n vault -n vault
-```
-
-Then you must expose vault server so it can be reached from SNO clusters.
-
-Once server is deployed and argo-vault-plugin working on SNO, you must configure vault server auth so argo can authenticate against it.
-
-Follow this instructions [here](https://luafanti.medium.com/injecting-secrets-from-vault-into-helm-charts-with-argocd-43fc1df57e74).
-
-```bash
-# enable kv-v2 engine in Vault
-oc exec vault-0 -- vault secrets enable kv-v2
-
-# create kv-v2 secret with two keys # Put your secrets here
-oc exec vault-0 -- vault kv put kv-v2/demo password="password123"
-
-oc exec vault-0 -- vault kv get kv-v2/demo
-
-oc rsh vault-0 # Then run these commands
-
-# create policy to enable reading above secret
-vault policy write demo - <<EOF # Replace with your app name
-path "kv-v2/data/demo" {
-  capabilities = ["read"]
-}
-EOF
-
-vault auth enable approle
-
-vault write auth/approle/role/argocd secret_id_ttl=120h token_num_uses=1000 token_ttl=120h token_max_ttl=120h secret_id_num_uses=4000  token_policies=demo
-
-vault read auth/approle/role/argocd/role-id
-
-vault write -f auth/approle/role/argocd/secret-id
-```
-Bear in mind you need to update this secret on [main](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) and [main-day2](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main-day2/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) branch to so users will clone and pull the right credentials.
 
 ## Destroy cluster
 

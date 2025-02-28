@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    app: freeipa
+  name: freeipa
+  namespace: openshift-gitops
+spec:
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ipa
+  project: default
+  source:
+    repoURL: https://redhat-cop.github.io/helm-charts
+    targetRevision: 1.3.8
+    chart: ipa
+    helm:
+      values: |
+        app_domain: apps.$CLUSTER_DOMAIN
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true

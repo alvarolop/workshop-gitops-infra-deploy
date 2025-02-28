@@ -21,7 +21,7 @@ export AWS_SECRET_ACCESS_KEY=""
 export OPENSHIFT_VERSION="4.17.17"
 
 # Copy directly from demo.redhat.com
-BASE_DOMAIN=""
+export BASE_DOMAIN=""
 
 # Number of users for the workshop
 AMOUNT_OF_USERS=50
@@ -31,3 +31,8 @@ INSTANCE_TYPE="m7i.4xlarge"
 
 # Red Hat Pull Secret
 RHOCM_PULL_SECRET=''
+
+#
+# Script variables
+# 
+export WORKDIR=$(pwd)/workdir

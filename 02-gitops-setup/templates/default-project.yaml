@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: default
+  namespace: openshift-gitops
+spec:
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  roles:
+      {{- range $key, $val := $.Values.global.sno }}
+    - description: View privileged for workshop users
+      groups:
+        - admin-sno-{{ $key }}
+      name: admin-sno-{{ $key }}
+      policies:
+        - 'p, role:admin-sno-{{ $key }}, applications, get, default/*, allow'
+      {{- end }}  
+  sourceRepos:
+    - '*'
