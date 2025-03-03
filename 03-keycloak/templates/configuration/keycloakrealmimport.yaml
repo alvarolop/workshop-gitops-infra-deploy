@@ -6,6 +6,8 @@ kind: KeycloakRealmImport
 metadata:
   name: myrealm-{{ $instance }}
   namespace: {{ $.Values.global.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   keycloakCRName: keycloak
   realm:
