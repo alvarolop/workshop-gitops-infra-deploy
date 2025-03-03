@@ -1,7 +1,7 @@
 {{- if $.Values.global.render -}}
 ---
 kind: ArgoCD
-apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1beta1
 metadata:
   name: argocd
   namespace: {{ $.Values.global.namespace }}
