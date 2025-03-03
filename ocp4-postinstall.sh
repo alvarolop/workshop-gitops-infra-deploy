@@ -26,8 +26,12 @@ echo -e "\n==============================="
 echo -e "=      INSTALL OCP GITOPS     ="
 echo -e "===============================\n"
 
+GITOPS_NS=openshift-gitops
+
 echo -e "\n[1/2]Install the GitOps operator"
 oc apply -f 01-gitops-operator
+
+sleep 30
 
 echo -n "Waiting for pods ready..."
 while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
@@ -35,6 +39,9 @@ while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-oper
 echo -e "\n[2/2]Configure ArgoCD using GitOps"
 cat 02-application-gitops-setup.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
 
+APP=gitops-setup
+echo -n "Waiting for Argo CD application to be synced and healthy..."
+while [[ $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.sync.status}') != "Synced" || $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.health.status}') != "Healthy" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n" 
 
 echo -e "\n============================="
 echo -e "=      INSTALL KEYCLOAK     ="
@@ -42,13 +49,24 @@ echo -e "=============================\n"
 
 cat 03-application-keycloak.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN NUM_CLUSTERS=20 envsubst | oc apply -f -
 
+APP=keycloak
+echo -n "Waiting for Argo CD application to be synced and healthy..."
+while [[ $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.sync.status}') != "Synced" || $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.health.status}') != "Healthy" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
+
 echo -e "\n============================="
 echo -e "=   INSTALL HASHICORP VAULT  ="
 echo -e "=============================\n"
 
 oc apply -f 04-application-hashicorp-vault-server.yaml
 
+APP=hashicorp-vault-server
+echo -n "Waiting for Argo CD application to be synced and healthy..."
+while [[ $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.sync.status}') != "Synced" || $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.health.status}') != "Healthy" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
+
 echo "Vault has been deployed and exposed in the 'vault' namespace."
+
+echo -n "Waiting for pods ready..."
+while [[ $(oc get pods -l app.kubernetes.io/instance=hashicorp-vault-server -n vault -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
 
 echo "Initializing Hashicorp Vault..."
 

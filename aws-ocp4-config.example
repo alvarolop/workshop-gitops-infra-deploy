@@ -18,19 +18,19 @@ export AWS_SECRET_ACCESS_KEY=""
 
 # Set "stable" if you want to install the latest stable version
 # https://mirror.openshift.com/pub/openshift-v4/clients/ocp/
-export OPENSHIFT_VERSION="4.18.2"
+export OPENSHIFT_VERSION="4.17.19"
 
 # Copy directly from demo.redhat.com
 export BASE_DOMAIN=""
 
-# Number of users for the workshop
-AMOUNT_OF_USERS=50
+# # Number of users for the workshop
+# AMOUNT_OF_USERS=50
 
 # Machines instance type
-INSTANCE_TYPE="m7i.4xlarge"
+export INSTANCE_TYPE="m7i.4xlarge"
 
 # Red Hat Pull Secret
-RHOCM_PULL_SECRET=''
+export RHOCM_PULL_SECRET=''
 
 #
 # Script variables

@@ -73,7 +73,7 @@ Create a file with the environment variables that will be consistent during all 
 All the clusters (Hub and managed) for this workshop will be deployed using the same script: `ocp4-install.sh`. The way to execute this script is with the following parameters:
 
 ```bash
-sh ocp4-install.sh <cluster_name> <region_aws> <base_domain> <replicas_master> <replicas_worker> <vpc_id|false> <aws_id> <aws_secret> <instance_type> <amount_of_users> <rh_pull_secret>
+sh ocp4-install.sh <cluster_name> <replicas_master> <replicas_worker> <vpc_id|false>
 ```
 
 As most of the configuration is similar depending on the cluster type, I've created two sections to see how to deploy them. 
@@ -82,8 +82,6 @@ Note that `<vpc_id|false>` is the parameter that allows to configure the VPC whe
 
 * If this is the first cluster of the account (Hub), you need to set it to false, so that it creates a new VPC.
 * If you are installing a managed cluster, the Hub should be already present, so that you can reuse the same VPC. In such case, you will select the vpc-id created by the initial install.
-
-Also, note that `<amount_of_users>` refers to the users created in the htpasswd of the Hub Cluster. This parameter does not take effect on the Managed Clusters.
 
 Regarding the `<cluster_name>`, remember that it is mandatory to keep the same cluster names:
 * `argo-hub` for the Hub cluster.
@@ -96,7 +94,7 @@ Regarding the `<cluster_name>`, remember that it is mandatory to keep the same c
 ```bash
 source aws-ocp4-config
 
-sh ocp4-install.sh argo-hub $AWS_DEFAULT_REGION $BASE_DOMAIN 3 3 false $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $AMOUNT_OF_USERS $RHOCM_PULL_SECRET
+sh ocp4-install.sh argo-hub 3 3 false
 ```
 
 
@@ -105,11 +103,9 @@ sh ocp4-install.sh argo-hub $AWS_DEFAULT_REGION $BASE_DOMAIN 3 3 false $AWS_ACCE
 First, you need to wait until the Hub cluster is installed. Then, you can parallelize the installation of all the Managed Clusters with the following commands in different terminal tabs:
 
 ```bash
-source aws-ocp4-config
+source aws-ocp4-config; sh ocp4-install.sh sno-1 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
 
-sh ocp4-install.sh sno-1 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $RHOCM_PULL_SECRET
-
-sh ocp4-install.sh sno-2 $AWS_DEFAULT_REGION $BASE_DOMAIN 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text) $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $INSTANCE_TYPE $RHOCM_PULL_SECRET
+source aws-ocp4-config; sh ocp4-install.sh sno-2 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
 
 # Continue until you create all the required clusters
 ```
@@ -130,7 +126,8 @@ At this point, you should have the hub cluster and also one managed cluster for 
 > [!WARNING]
 > All this process has been automated so that you don't have to execute it manually. Please execute the following script:
 > ```bash
-> sh postinstall.sh aws-ocp4-config
+> export KUBECONFIG=workdir/install/install-dir-argo-hub/auth/kubeconfig
+> sh ocp4-postinstall.sh aws-ocp4-config
 > ```
 
 

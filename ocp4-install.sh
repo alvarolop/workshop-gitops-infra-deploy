@@ -4,16 +4,9 @@ set -x
 
 ## Env
 CLUSTER_NAME=${1}
-export AWS_DEFAULT_REGION=${2}
-BASE_DOMAIN=${3}
-REPLICAS_CP=${4}
-REPLICAS_WORKER=${5}
-VPC=${6}
-export AWS_ACCESS_KEY_ID=${7}
-export AWS_SECRET_ACCESS_KEY=${8}
-INSTANCE_TYPE=${9}
-USERS=${10}
-RHOCM_PULL_SECRET=${11}
+REPLICAS_CP=${2}
+REPLICAS_WORKER=${3}
+VPC=${4:-false}
 
 # Check if the directory exists, and create it if it doesn't
 if [ ! -d "$WORKDIR" ]; then
@@ -32,7 +25,7 @@ else
 fi
 
 
-if [ ! -f $WORKDIR/install/install-dir-$CLUSTER_NAME/terraform.cluster.tfstate ]; then
+if [ -f $WORKDIR/install/install-dir-$CLUSTER_NAME/terraform.cluster.tfstate ]; then
 
     echo "An OCP cluster exists. Skipping installation..."
     echo "Remove the install-dir folder and run the script."
@@ -128,6 +121,7 @@ install_ocp() {
 
 configure_oauth() {
     echo "Set HTPasswd as Identity Provider" ; echo " "
+    export KUBECONFIG=$WORKDIR/install/install-dir-$CLUSTER_NAME/auth/kubeconfig
     if [ $VPC == false ]; then
       oc apply -k auth/overlays/argo-hub
     else
