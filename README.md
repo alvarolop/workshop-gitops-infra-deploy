@@ -92,9 +92,7 @@ Regarding the `<cluster_name>`, remember that it is mandatory to keep the same c
 ### Deploying the Hub cluster
 
 ```bash
-source aws-ocp4-config
-
-sh ocp4-install.sh argo-hub 3 3 false
+source aws-ocp4-config; sh ocp4-install.sh argo-hub 3 3 false
 ```
 
 
@@ -126,8 +124,7 @@ At this point, you should have the hub cluster and also one managed cluster for 
 > [!WARNING]
 > All this process has been automated so that you don't have to execute it manually. Please execute the following script:
 > ```bash
-> export KUBECONFIG=workdir/install/install-dir-argo-hub/auth/kubeconfig
-> sh ocp4-postinstall.sh aws-ocp4-config
+> source aws-ocp4-config; bash ocp4-postinstall.sh
 > ```
 
 

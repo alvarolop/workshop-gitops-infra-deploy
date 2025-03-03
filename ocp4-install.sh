@@ -143,4 +143,3 @@ while true; do
         * ) echo "Select yes or no";;
     esac
 done
-
