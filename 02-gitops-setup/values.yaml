@@ -4,15 +4,15 @@ global:
   render: true
   argocd:
     enabled: true
-    controller: openshift-operators
+    controller: openshift-gitops-operator
   operators: 
     enabled: true
   rbac: 
     enabled: true 
-  namespace: openshift-operators
+  namespace: openshift-gitops
   domain: <domain>
   # sharding: <amount_of_sno>  
-  sno:
+  # sno:
   #   1: 
   #     token: <token>
   #     username: <username>
