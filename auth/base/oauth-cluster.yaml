@@ -5,9 +5,7 @@ metadata:
   name: cluster
 spec:
   identityProviders:
-  - name: my_htpasswd_provider
-    challenge: true
-    login: true
+  - name: Workshop Users
     mappingMethod: claim
     type: HTPasswd
     htpasswd:

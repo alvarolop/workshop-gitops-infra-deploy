@@ -10,7 +10,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "10"
   {{- end }}  
 users:
-  - user-{{ $key }}
+  - user{{ $key }}
 {{- end }} 
 ---
 kind: Group

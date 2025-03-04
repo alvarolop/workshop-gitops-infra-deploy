@@ -12,7 +12,7 @@ metadata:
 subjects:
   - kind: User
     apiGroup: rbac.authorization.k8s.io
-    name: user-{{ $key }}
+    name: user{{ $key }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

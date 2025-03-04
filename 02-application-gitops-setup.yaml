@@ -19,31 +19,31 @@ spec:
       values: |
         domain: $CLUSTER_DOMAIN
         sno:
-          1:
+          01:
             username: admin
             password: redhat
-          2:
+          02:
             username: admin
             password: redhat
-          3:
+          03:
             username: admin
             password: redhat
-          4:
+          04:
             username: admin
             password: redhat
-          5:
+          05:
             username: admin
             password: redhat
-          6:
+          06:
             username: admin
             password: redhat
-          7:
+          07:
             username: admin
             password: redhat
-          8:
+          08:
             username: admin
             password: redhat
-          9:
+          09:
             username: admin
             password: redhat
           10:
@@ -77,6 +77,21 @@ spec:
             username: admin
             password: redhat
           20:
+            username: admin
+            password: redhat
+          21:
+            username: admin
+            password: redhat
+          22:
+            username: admin
+            password: redhat
+          23:
+            username: admin
+            password: redhat
+          24:
+            username: admin
+            password: redhat
+          25:
             username: admin
             password: redhat
   syncPolicy:
