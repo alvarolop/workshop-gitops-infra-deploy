@@ -26,7 +26,7 @@ This repo is part of the [ArgoCD Managing Infrastructure workshop](https://alvar
 In order to deploy all the infra you will need to cover the following steps:
 
 1. Deploy the hub cluster named `argo-hub`. This will create a VPC on AWS.
-2. Deploy all the managed clusters named `sno-X` reusing the same VPC.
+2. Deploy all the managed clusters named `sno-XX` reusing the same VPC.
 3. Deploy ArgoCD to manage those clusters.
 4. Configure FreeIPA and Keycloak on the hub to provide credentials.
 5. Configure Hashicorp Vault on the hub to store secrets.
@@ -101,9 +101,12 @@ source aws-ocp4-config; sh ocp4-install.sh argo-hub 3 3 false
 First, you need to wait until the Hub cluster is installed. Then, you can parallelize the installation of all the Managed Clusters with the following commands in different terminal tabs:
 
 ```bash
-source aws-ocp4-config; sh ocp4-install.sh sno-1 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
+source aws-ocp4-config; sh ocp4-install.sh sno-01 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
 
-source aws-ocp4-config; sh ocp4-install.sh sno-2 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
+source aws-ocp4-config; sh ocp4-install.sh sno-02 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
+
+source aws-ocp4-config; sh ocp4-install.sh sno-03 1 0 $(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
+
 
 # Continue until you create all the required clusters
 ```

@@ -38,9 +38,9 @@ echo -n "Waiting for pods ready..."
 while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
 
 echo -e "\n[2/2]Configure ArgoCD using GitOps"
-cat 02-application-gitops-setup.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
+cat 02-application-hub-setup.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN envsubst | oc apply -f -
 
-APP=gitops-setup
+APP=hub-setup
 echo -n "Waiting for Argo CD application to be synced and healthy..."
 while [[ $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.sync.status}') != "Synced" || $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.health.status}') != "Healthy" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n" 
 
