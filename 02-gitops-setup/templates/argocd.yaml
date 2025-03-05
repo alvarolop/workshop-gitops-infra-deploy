@@ -3,7 +3,7 @@
 kind: ArgoCD
 apiVersion: argoproj.io/v1beta1
 metadata:
-  name: argocd
+  name: openshift-gitops
   namespace: {{ $.Values.global.namespace }}
   {{- if $.Values.global.argocd.enabled }}
   annotations:
