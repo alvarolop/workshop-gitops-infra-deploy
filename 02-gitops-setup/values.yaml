@@ -10,10 +10,11 @@ global:
   rbac: 
     enabled: true 
   namespace: openshift-gitops
-  domain: <domain>
-  # sharding: <amount_of_sno>  
-  # sno:
-  #   1: 
-  #     token: <token>
-  #     username: <username>
-  #     password: <password>
+  domain: $CLUSTER_DOMAIN
+  sno:
+    "01":
+      username: admin
+      password: redhat
+    "02":
+      username: admin
+      password: redhat

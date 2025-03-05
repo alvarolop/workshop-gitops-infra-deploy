@@ -32,7 +32,7 @@ GITOPS_NS=openshift-gitops
 echo -e "\n[1/2]Install the GitOps operator"
 oc apply -f 01-gitops-operator
 
-sleep 30
+# sleep 30
 
 echo -n "Waiting for pods ready..."
 while [[ $(oc get pods -l control-plane=gitops-operator -n openshift-gitops-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n"
