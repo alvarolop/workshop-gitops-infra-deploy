@@ -9,7 +9,7 @@ global:
     enabled: true
   rbac: 
     enabled: true 
-  namespace: openshift-gitops
+  namespace: openshift-operators
   domain: $CLUSTER_DOMAIN
   sno:
     "01":
