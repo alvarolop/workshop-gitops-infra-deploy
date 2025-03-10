@@ -44,6 +44,7 @@ APP=hub-setup
 echo -n "Waiting for Argo CD application to be synced and healthy..."
 while [[ $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.sync.status}') != "Synced" || $(oc get application $APP -n $GITOPS_NS -o jsonpath='{.status.health.status}') != "Healthy" ]]; do echo -n "." && sleep 1; done; echo -n -e "  [OK]\n" 
 
+oc patch argocd openshift-gitops -n openshift-gitops --type=json -p '[{"op": "add", "path": "/spec/rbac/defaultPolicy", "value": "role:readonly"}]'
 
 echo -e "\n==============================="
 echo -e "=     INSTALL CERTIFICATES    ="
