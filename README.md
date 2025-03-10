@@ -58,6 +58,16 @@ In order to install OpenShift on AWS using IPI (Installer-Provisioned Infrastruc
 > If you are a Red Hatter, you can order a lab environment on the [Red Hat Demo Platform](https://catalog.demo.redhat.com/catalog?item=babylon-catalog-prod/sandboxes-gpte.sandbox-open.prod&utm_source=webapp&utm_medium=share-link). Request environment `Red Hat Open Environments` > `AWS Blank Open Environment`.
 
 
+
+> [!CAUTION]
+> `AWS Blank Open Environment` accounts have a default Service Quota of **Classic Load Balancers per Region = 20**. This means that you can only deploy this exercise for 15 users by default. Rise the Quota to 40 to ensure that you can at least deploy 20 clusters. For that, just follow these steps:
+> 1. Sign in to the AWS Management Console.
+> 2. Open the Service Quotas console.
+> 3. In the navigation pane, choose AWS services and select Elastic Load Balancing.
+> 4. Find the quota for `Application-` or `Classic Load Balancers per region` (e.g., 50 for Application Load Balancers per region) and request an increase.
+
+
+
 ### Environment variables
 
 Create a file with the environment variables that will be consistent during all the deployment. I suggest the following process:
@@ -175,7 +185,7 @@ oc apply -f 04-application-hashicorp-vault-server.yaml
 After Vault is ready, you have to populate it with the following script:
 
 ```bash
-04-create_vault_secrets.sh
+./04-create_vault_secrets.sh
 ```
 
 <!-- Bear in mind you need to update this secret on [main](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) and [main-day2](https://github.com/romerobu/workshop-gitops-content-deploy/blob/main-day2/cluster-addons/charts/bootstrap/templates/vault/secret-vault.yaml) branch to so users will clone and pull the right credentials. -->
@@ -239,8 +249,8 @@ To create FreeIPA users, run these commands:
 If you want to delete a cluster, first run this command to destroy it from AWS:
 
 ```bash
-CLUSTER_NAME=<cluster_name>
-openshift-install destroy cluster --dir workdir/install/install-dir-$CLUSTER_NAME --log-level info
+CLUSTER_NAME=sno-XX
+source aws-ocp4-config; ./workdir/openshift-install destroy cluster --dir workdir/install/install-dir-$CLUSTER_NAME --log-level info
 ```
 
 Then remove it from ArgoCD instance:

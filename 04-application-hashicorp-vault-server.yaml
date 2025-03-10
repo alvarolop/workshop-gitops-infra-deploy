@@ -24,6 +24,12 @@ spec:
         server:
           dev:
             enabled: true
+          # standalone:
+          #   enabled: true
+          # https://developer.hashicorp.com/vault/docs/platform/k8s/helm/configuration#datastorage
+          # dataStorage:
+          #   enabled: true
+          #   size: 20Gi
           route:
             enabled: true
             host: ''
