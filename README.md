@@ -10,11 +10,12 @@
       1. [Deploying the Hub cluster](#deploying-the-hub-cluster)
       2. [Deploying Managed Clusters (SNO)](#deploying-managed-clusters-sno)
    3. [Postinstall configuration](#postinstall-configuration)
-      1. [1. Deploy and configure ArgoCD declaratively](#1-deploy-and-configure-argocd-declaratively)
-      2. [2. Deploy keycloak](#2-deploy-keycloak)
-      3. [3. Deploy vault server](#3-deploy-vault-server)
-      4. [4. Deploy FreeIPA](#4-deploy-freeipa)
-      5. [Create FreeIPA users](#create-freeipa-users)
+      1. [0. Determine the kubeadmin passwords for all users](#0-determine-the-kubeadmin-passwords-for-all-users)
+      2. [1. Deploy and configure ArgoCD declaratively](#1-deploy-and-configure-argocd-declaratively)
+      3. [2. Deploy keycloak](#2-deploy-keycloak)
+      4. [3. Deploy vault server](#3-deploy-vault-server)
+      5. [4. Deploy FreeIPA](#4-deploy-freeipa)
+      6. [Create FreeIPA users](#create-freeipa-users)
    4. [Destroy cluster](#destroy-cluster)
 
 
@@ -133,6 +134,11 @@ At this point, you should have the hub cluster and also one managed cluster for 
 
 
 ## Postinstall configuration
+
+
+### 0. Determine the kubeadmin passwords for all users
+
+Before installing, you need to to determine the `kubeadmin` passwords and add them to the `argo-hub` Helm values.yaml. Please, execute the command `bash ocp4-print-kubeadmin.sh` and add the YAML section to `02-application-gitops-setup.yaml`. After that, you will be able to run the automated post-install script of the next Admonition section.
 
 > [!WARNING]
 > All this process has been automated so that you don't have to execute it manually. Please execute the following script:
