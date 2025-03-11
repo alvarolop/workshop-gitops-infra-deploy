@@ -1,0 +1,8 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - sa-argocd-admin.yaml
+  - secret-argocd-admin-token.yaml
+  - crb-argocd-admin-cluster-admin.yaml
