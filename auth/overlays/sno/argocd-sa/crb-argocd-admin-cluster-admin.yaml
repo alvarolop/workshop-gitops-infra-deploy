@@ -10,4 +10,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: argocd-admin
-    namespace: openshift
+    namespace: openshift-config
