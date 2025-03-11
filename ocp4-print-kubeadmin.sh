@@ -23,7 +23,7 @@ for cluster_name in "${sno_folders[@]}"; do
   export KUBECONFIG="workdir/install/install-dir-$cluster_name/auth/kubeconfig"
   # oc apply -k auth/overlays/sno
   cluster_id=${cluster_name#"sno-"} # Remove the sno- part
-  token=$(oc create token argocd-admin -n openshift-config)
+  token=$(oc describe secret -n openshift-config $(oc get sa argocd-admin -n openshift-config -o jsonpath='{.secrets[0].name}') | grep token: | cut -d':' -f2- | sed 's/^[[:space:]]*//')
   echo "            \"$cluster_id\":"
   echo "              token: $token"
 done
