@@ -20,16 +20,32 @@ done
 echo -e "\nYAML Structure:\n"
 echo "          sno:"
 for cluster_name in "${sno_folders[@]}"; do
-  file_path="workdir/install/install-dir-$cluster_name/auth/kubeadmin-password"
+  export KUBECONFIG="workdir/install/install-dir-$cluster_name/auth/kubeconfig"
+  # oc apply -k auth/overlays/sno
   cluster_id=${cluster_name#"sno-"} # Remove the sno- part
-  if [ -f "$file_path" ]; then
-    password=$(cat "$file_path")
-    echo "            \"$cluster_id\":"
-    echo "              username: kubeadmin"
-    echo "              password: $password"
-  else
-    echo "            \"$cluster_id\":"
-    echo "              username: kubeadmin"
-    echo "              password: File not found"
-  fi
+  token=$(oc describe secret -n openshift-config $(oc get sa argocd-admin -n openshift-config -o jsonpath='{.secrets[0].name}') | grep token: | cut -d':' -f2- | sed 's/^[[:space:]]*//')
+  echo "            \"$cluster_id\":"
+  echo "              token: $token"
 done
+
+
+
+
+
+# Basic authentication does not work in ArgoCD 2.13. So let's use the token version above
+# echo -e "\nYAML Structure:\n"
+# echo "          sno:"
+# for cluster_name in "${sno_folders[@]}"; do
+#   file_path="workdir/install/install-dir-$cluster_name/auth/kubeadmin-password"
+#   cluster_id=${cluster_name#"sno-"} # Remove the sno- part
+#   if [ -f "$file_path" ]; then
+#     password=$(cat "$file_path")
+#     echo "            \"$cluster_id\":"
+#     echo "              username: kubeadmin"
+#     echo "              password: $password"
+#   else
+#     echo "            \"$cluster_id\":"
+#     echo "              username: kubeadmin"
+#     echo "              password: File not found"
+#   fi
+# done
