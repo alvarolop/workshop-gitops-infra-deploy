@@ -16,7 +16,9 @@
       4. [3. Deploy vault server](#3-deploy-vault-server)
       5. [4. Deploy FreeIPA](#4-deploy-freeipa)
       6. [Create FreeIPA users](#create-freeipa-users)
-   4. [Destroy cluster](#destroy-cluster)
+   4. [Manual tasks after postinstall](#manual-tasks-after-postinstall)
+      1. [1. Provide the AVP secret values](#1-provide-the-avp-secret-values)
+   5. [Destroy cluster](#destroy-cluster)
 
 
 > [!IMPORTANT]
@@ -245,6 +247,46 @@ To create FreeIPA users, run these commands:
 ```bash
 ./05-init-freeipa.sh
 ```
+
+
+## Manual tasks after postinstall
+
+### 1. Provide the AVP secret values
+
+In order to simplify their interaction, they will already get the values for AVP
+
+```bash
+VAULT_ADDR="$(oc get route hashicorp-vault-server -n vault --template='https://{{.spec.host}}')"
+VAULT_TOKEN="root"                  # Default token in dev mode
+
+# Retrieve the role_id for argocd
+echo -e "\nRetrieving role_id for AppRole argocd..."
+ROLE_ID=$(curl -k -s \
+            --header "X-Vault-Token: $VAULT_TOKEN" \
+            "$VAULT_ADDR/v1/auth/approle/role/argocd/role-id" | jq -r '.data.role_id')
+
+if [ $? -eq 0 ] && [ ! -z "$ROLE_ID" ]; then
+    echo "Retrieved role_id for argocd: $ROLE_ID"
+else
+    echo "Failed to retrieve role_id for argocd"
+fi
+
+# Generate a secret_id for argocd
+echo -e "\nGenerating secret_id for AppRole argocd..."
+SECRET_ID=$(curl -k -s \
+              --header "X-Vault-Token: $VAULT_TOKEN" \
+              --request POST \
+              "$VAULT_ADDR/v1/auth/approle/role/argocd/secret-id" | jq -r '.data.secret_id')
+
+if [ $? -eq 0 ] && [ ! -z "$SECRET_ID" ]; then
+    echo "Generated secret_id for argocd: $SECRET_ID"
+else
+    echo "Failed to generate secret_id for argocd"
+fi
+```
+
+You will need to add those values to the line 31 and 32 of file `cluster-addons/charts/bootstrap/values.yaml`.
+
 
 
 
