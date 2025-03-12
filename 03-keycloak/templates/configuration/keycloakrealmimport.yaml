@@ -23,8 +23,8 @@ spec:
       #   
       #   standardFlowEnabled: true
       #   serviceAccountsEnabled: true
-      - name: myclient
-        clientId: myclient
+      - name: myclient-{{ $instance }}
+        clientId: myclient-{{ $instance }}
         # secret: MiF4P4tDFl3oWrisy7VdUOqngoNlv72D
         enabled: true
         redirectUris:
