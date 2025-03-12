@@ -18,13 +18,13 @@ export AWS_SECRET_ACCESS_KEY=""
 
 # Set "stable" if you want to install the latest stable version
 # https://mirror.openshift.com/pub/openshift-v4/clients/ocp/
-export OPENSHIFT_VERSION="4.17.19"
+export OPENSHIFT_VERSION="4.17.20"
 
 # Copy directly from demo.redhat.com
 export BASE_DOMAIN=""
 
-# # Number of users for the workshop
-# AMOUNT_OF_USERS=50
+# Number of users for the workshop
+export KEYCLOAK_REALMS=25
 
 # Machines instance type
 export INSTANCE_TYPE="m7i.4xlarge"

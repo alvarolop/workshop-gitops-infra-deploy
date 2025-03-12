@@ -97,7 +97,7 @@ echo -e "\n============================="
 echo -e "=      INSTALL KEYCLOAK     ="
 echo -e "=============================\n"
 
-cat 03-application-keycloak.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN NUM_CLUSTERS=20 envsubst | oc apply -f -
+cat 03-application-keycloak.yaml | CLUSTER_DOMAIN=$BASE_DOMAIN NUM_CLUSTERS=$KEYCLOAK_REALMS envsubst | oc apply -f -
 
 APP=keycloak
 echo -n "Waiting for Argo CD application to be synced and healthy..."
