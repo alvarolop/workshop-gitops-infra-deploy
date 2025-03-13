@@ -69,19 +69,19 @@ fi
 
 
 # Create a policy for the role
-echo -e "\nCreating policy svc-policy..."
+echo -e "\nCreating policy demo-get..."
 curl -k -s \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     --request PUT \
     --data '{
         "policy": "path \"secret/data/*\" {\n  capabilities = [\"read\"]\n}"
     }' \
-    "$VAULT_ADDR/v1/sys/policies/acl/svc-policy" > /dev/null
+    "$VAULT_ADDR/v1/sys/policies/acl/demo-get" > /dev/null
 
 if [ $? -eq 0 ]; then
-    echo "Policy svc-policy created"
+    echo "Policy demo-get created"
 else
-    echo "Failed to create policy svc-policy"
+    echo "Failed to create policy demo-get"
 fi
 
 # Create a role binding Kubernetes service account to the policy
@@ -119,8 +119,9 @@ else
     echo "Failed to enable AppRole authentication"
 fi
 
-# Create an AppRole named argocd
-echo -e "\nCreating AppRole argocd..."
+
+# Binding an AppRole approle to demo-get policy
+echo -e "\nBinding an AppRole approle to demo-get policy..."
 curl -k -s \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     --request POST \
@@ -130,7 +131,7 @@ curl -k -s \
         "token_ttl": "120h",
         "token_max_ttl": "120h",
         "secret_id_num_uses": 4000,
-        "policies": ["demo"]
+        "policies": ["demo-get"]
     }' \
     "$VAULT_ADDR/v1/auth/approle/role/argocd" > /dev/null
 
